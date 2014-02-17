@@ -22,7 +22,7 @@ b.batch([
 ]);
 
 test(function (t) {
-    t.plan(8);
+    t.plan(12);
     
     function arows (rows) {
         t.deepEqual(rows, [
@@ -51,6 +51,11 @@ test(function (t) {
     collect2(db.createKeyStream(), akeys);
     db.createKeyStream().pipe(concat(akeys));
     db.createKeyStream().pipe(concat2(akeys));
+    
+    collect(db.createValueStream(), avalues);
+    collect2(db.createValueStream(), avalues);
+    db.createValueStream().pipe(concat(avalues));
+    db.createValueStream().pipe(concat2(avalues));
     
     setTimeout(function () {
         db.swap(a);

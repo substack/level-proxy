@@ -1,7 +1,8 @@
 var test = require('tape');
 var level = require('level');
 var levelProxy = require('../');
-var tmpdir = require('os').tmpdir();
+var os = require('os');
+var tmpdir = os.tmpdir ? os.tmpdir() : os.tmpDir();
 
 var a = level(tmpdir + '/level-swap-a-' + Math.random(), { encoding: 'json' });
 var b = level(tmpdir + '/level-swap-b-' + Math.random(), { encoding: 'json' });

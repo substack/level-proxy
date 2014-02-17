@@ -2,6 +2,8 @@
 
 proxy a leveldb reference so you can swap backend instances on the fly
 
+[![build status](https://secure.travis-ci.org/substack/level-proxy.png)](http://travis-ci.org/substack/level-proxy)
+
 This is useful for modules that need to switch out references transparently,
 like automatically upgrading an ordinary vanilla reference into a multilevel
 handle. You could probably also use this module to implement even crazier

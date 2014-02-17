@@ -22,7 +22,7 @@ b.batch([
 ]);
 
 test('stream swapping', function (t) {
-    t.plan(12 * 5);
+    t.plan(12 * 6);
     
     function arows (rows) {
         t.deepEqual(rows, [
@@ -69,6 +69,12 @@ test('stream swapping', function (t) {
             expectB();
             db.swap(a);
             expectA();
+            
+            db.swap(null);
+            expectB();
+            setTimeout(function () {
+                db.swap(b);
+            }, 50);
         }, 50);
     }, 50);
     

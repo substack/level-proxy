@@ -22,7 +22,7 @@ b.batch([
 ]);
 
 test(function (t) {
-    t.plan(4);
+    t.plan(8);
     
     function arows (rows) {
         t.deepEqual(rows, [
@@ -32,11 +32,25 @@ test(function (t) {
         ]);
     }
     
+    function akeys (keys) {
+        t.deepEqual(keys, [ 'a', 'b', 'c' ]);
+    }
+    
+    function avalues (values) {
+        t.deepEqual(values, [ 3, 4, 5 ]);
+    }
+    
     var db = levelProxy();
+    
     collect(db.createReadStream(), arows);
     collect2(db.createReadStream(), arows);
     db.createReadStream().pipe(concat(arows));
     db.createReadStream().pipe(concat2(arows));
+    
+    collect(db.createKeyStream(), akeys);
+    collect2(db.createKeyStream(), akeys);
+    db.createKeyStream().pipe(concat(akeys));
+    db.createKeyStream().pipe(concat2(akeys));
     
     setTimeout(function () {
         db.swap(a);

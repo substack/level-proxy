@@ -8,7 +8,7 @@ var b = level(tmpdir + '/level-swap-b-' + Math.random(), { encoding: 'json' });
 var db = levelProxy(a);
 
 test(function (t) {
-    t.plan(20);
+    t.plan(404);
     
     var n = 0;
     var last = {};
@@ -17,14 +17,14 @@ test(function (t) {
     function next () {
         db.put('x', n + 1, function (err) {
             if (err) t.fail(err);
-            n ++;
             read();
+            
+            if (++ times % 5 === 0) {
+                console.log('SWAP');
+                db.swap([ a, b ][++ index % 2]);
+            }
+            n ++;
         });
-        
-        if (++ times % 5 === 0) {
-            db.swap([ a, b ][++ index % 2]);
-console.log('SWAP');
-        }
     }
     read();
     

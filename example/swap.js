@@ -3,11 +3,7 @@ var levelSwap = require('../');
 
 var a = level('/tmp/level-swap/a');
 var b = level('/tmp/level-swap/b');
-
 var db = levelSwap(a);
-db.on('put', function (key, value) {
-    console.log(key, '=>', value);
-});
 
 var n = 0;
 setInterval(function () { db.put('x', n++) }, 250);

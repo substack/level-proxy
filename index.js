@@ -24,7 +24,7 @@ LevelProxy.prototype.swap = function swap (db) {
         var queue = this._proxyQueue.splice(0);
         for (var i = 0; i < queue.length; i++) {
             var q = queue[i];
-            q.method.apply(self, q.args);
+            q.method.apply(db, q.args);
         }
         if (this._proxyQueue.length) {
             // in case more methods slipped into the queue on the same tick:
@@ -55,49 +55,49 @@ LevelProxy.prototype._proxyUnlisten = function (db) {
     }
 };
 
-LevelProxy.prototype._proxyMethod = function (f, args) {
-    if (this._proxyDb) f.apply(this._proxyDb, args)
-    else this._proxyQueue.push({ method: f, args: args })
+LevelProxy.prototype._proxyMethod = function (fname, args) {
+    if (this._proxyDb) this._proxyDb[fname].apply(this._proxyDb, args)
+    else this._proxyQueue.push({ method: fname, args: args })
 };
 
-LevelProxy.prototype.open = function open () {
-    this._proxyMethod(open, arguments);
+LevelProxy.prototype.open = function () {
+    this._proxyMethod('open', arguments);
 };
 
-LevelProxy.prototype.close = function close () {
-    this._proxyMethod(close, arguments);
+LevelProxy.prototype.close = function () {
+    this._proxyMethod('close', arguments);
 };
 
-LevelProxy.prototype.put = function put () {
-    this._proxyMethod(put, arguments);
+LevelProxy.prototype.put = function () {
+    this._proxyMethod('put', arguments);
 };
 
-LevelProxy.prototype.get = function get () {
-    this._proxyMethod(get, arguments);
+LevelProxy.prototype.get = function () {
+    this._proxyMethod('get', arguments);
 };
 
-LevelProxy.prototype.del = function del () {
-    this._proxyMethod(del, arguments);
+LevelProxy.prototype.del = function () {
+    this._proxyMethod('del', arguments);
 };
 
-LevelProxy.prototype.batch = function batch () {
-    this._proxyMethod(batch, arguments);
+LevelProxy.prototype.batch = function () {
+    this._proxyMethod('batch', arguments);
 };
 
-LevelProxy.prototype.approximateSize = function approximateSize () {
-    this._proxyMethod(approximateSize, arguments);
+LevelProxy.prototype.approximateSize = function () {
+    this._proxyMethod('approximateSize', arguments);
 };
 
-LevelProxy.prototype.getProperty = function getProperty () {
-    this._proxyMethod(getProperty, arguments);
+LevelProxy.prototype.getProperty = function () {
+    this._proxyMethod('getProperty', arguments);
 };
 
-LevelProxy.prototype.destroy = function destroy () {
-    this._proxyMethod(destroy, arguments);
+LevelProxy.prototype.destroy = function () {
+    this._proxyMethod('destroy', arguments);
 };
 
-LevelProxy.prototype.repair = function repair () {
-    this._proxyMethod(repair, arguments);
+LevelProxy.prototype.repair = function () {
+    this._proxyMethod('repair', arguments);
 };
 
 LevelProxy.prototype.iterator = function () {

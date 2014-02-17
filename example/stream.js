@@ -1,8 +1,8 @@
 var level = require('level');
 var levelProxy = require('../');
 
-var a = level('/tmp/level-swap/a');
-var b = level('/tmp/level-swap/b');
+var a = level('/tmp/stream-a');
+var b = level('/tmp/stream-b');
 
 a.batch([
     { type: 'put', key: 'a', value: 3 },

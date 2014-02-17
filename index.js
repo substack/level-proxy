@@ -76,6 +76,10 @@ LevelProxy.prototype.get = function () {
     this._proxyMethod('get', arguments);
 };
 
+LevelProxy.prototype.createReadStream = function () {
+    this._proxyMethod('createReadStream', arguments);
+};
+
 LevelProxy.prototype.del = function () {
     this._proxyMethod('del', arguments);
 };

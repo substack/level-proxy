@@ -1,5 +1,5 @@
 var inherits = require('inherits');
-var EventEmitter = require('events').EventEmitter;
+var EventEmitter = require('events/');
 var Readable = require('readable-stream').Readable;
 
 var EVENT_KEYS = [ 'put', 'del' ];

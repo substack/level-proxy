@@ -21,8 +21,8 @@ b.batch([
     { type: 'put', key: 'z', value: 9 },
 ]);
 
-test(function (t) {
-    t.plan(12);
+test('stream swapping', function (t) {
+    t.plan(12 * 5);
     
     function arows (rows) {
         t.deepEqual(rows, [
@@ -40,26 +40,71 @@ test(function (t) {
         t.deepEqual(values, [ 3, 4, 5 ]);
     }
     
+    function brows (rows) {
+        t.deepEqual(rows, [
+            { key: 'x', value: 7 },
+            { key: 'y', value: 8 },
+            { key: 'z', value: 9 }
+        ]);
+    }
+    
+    function bkeys (keys) {
+        t.deepEqual(keys, [ 'x', 'y', 'z' ]);
+    }
+    
+    function bvalues (values) {
+        t.deepEqual(values, [ 7, 8, 9 ]);
+    }
+    
     var db = levelProxy();
-    
-    collect(db.createReadStream(), arows);
-    collect2(db.createReadStream(), arows);
-    db.createReadStream().pipe(concat(arows));
-    db.createReadStream().pipe(concat2(arows));
-    
-    collect(db.createKeyStream(), akeys);
-    collect2(db.createKeyStream(), akeys);
-    db.createKeyStream().pipe(concat(akeys));
-    db.createKeyStream().pipe(concat2(akeys));
-    
-    collect(db.createValueStream(), avalues);
-    collect2(db.createValueStream(), avalues);
-    db.createValueStream().pipe(concat(avalues));
-    db.createValueStream().pipe(concat2(avalues));
+    expectA();
     
     setTimeout(function () {
         db.swap(a);
+        expectA();
+        
+        db.swap(b);
+        expectB();
+        setTimeout(function () {
+            expectB();
+            db.swap(a);
+            expectA();
+        }, 50);
     }, 50);
+    
+    function expectA () {
+        collect(db.createReadStream(), arows);
+        collect2(db.createReadStream(), arows);
+        db.createReadStream().pipe(concat(arows));
+        db.createReadStream().pipe(concat2(arows));
+        
+        collect(db.createKeyStream(), akeys);
+        collect2(db.createKeyStream(), akeys);
+        db.createKeyStream().pipe(concat(akeys));
+        db.createKeyStream().pipe(concat2(akeys));
+        
+        collect(db.createValueStream(), avalues);
+        collect2(db.createValueStream(), avalues);
+        db.createValueStream().pipe(concat(avalues));
+        db.createValueStream().pipe(concat2(avalues));
+    }
+    
+    function expectB () {
+        collect(db.createReadStream(), brows);
+        collect2(db.createReadStream(), brows);
+        db.createReadStream().pipe(concat(brows));
+        db.createReadStream().pipe(concat2(brows));
+        
+        collect(db.createKeyStream(), bkeys);
+        collect2(db.createKeyStream(), bkeys);
+        db.createKeyStream().pipe(concat(bkeys));
+        db.createKeyStream().pipe(concat2(bkeys));
+        
+        collect(db.createValueStream(), bvalues);
+        collect2(db.createValueStream(), bvalues);
+        db.createValueStream().pipe(concat(bvalues));
+        db.createValueStream().pipe(concat2(bvalues));
+    }
 });
 
 function collect (s, cb) {

@@ -18,9 +18,9 @@ LevelProxy.prototype.swap = function swap (db) {
     var self = this;
     if (this._proxyDb) {
         this._proxyUnlisten(this._proxyDb);
-        this._proxyListen(db);
+        if (db) this._proxyListen(db);
     }
-    else {
+    else if (db) {
         this._proxyListen(db);
         var queue = this._proxyQueue.splice(0);
         for (var i = 0; i < queue.length; i++) {
@@ -36,7 +36,7 @@ LevelProxy.prototype.swap = function swap (db) {
         }
     }
     this._proxyDb = db;
-    this.emit('swap', db);
+    if (db) this.emit('swap', db);
 };
 
 LevelProxy.prototype._proxyListen = function (db) {

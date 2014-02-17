@@ -1,9 +1,9 @@
 var level = require('level');
-var levelSwap = require('../');
+var levelProxy = require('../');
 
 var a = level('/tmp/level-swap/a');
 var b = level('/tmp/level-swap/b');
-var db = levelSwap(a);
+var db = levelProxy(a);
 
 var n = 0;
 setInterval(function () { db.put('x', n++) }, 250);

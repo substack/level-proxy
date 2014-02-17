@@ -1,4 +1,4 @@
-# level-swap
+# level-proxy
 
 proxy a leveldb reference so you can swap backend instances on the fly
 
@@ -9,16 +9,16 @@ things, like a transparent hash ring.
 
 # example
 
-In this example, we'll create 2 db handles proxied by the level-swap handle
+In this example, we'll create 2 db handles proxied by the level-proxy handle
 `db`: `a` and `b`. The handles will swap into being the active handle every 3
 seconds.
 
 ``` js
 var level = require('level');
-var levelSwap = require('level-swap');
+var levelSwap = require('level-proxy');
 
-var a = level('/tmp/level-swap/a');
-var b = level('/tmp/level-swap/b');
+var a = level('/tmp/db-a');
+var b = level('/tmp/db-b');
 var db = levelSwap(a);
 
 var n = 0;
@@ -55,10 +55,10 @@ b.x= 18
 # methods
 
 ``` js
-var levelSwap = require('level-swap');
+var levelProxy = require('level-proxy');
 ```
 
-## var db = levelSwap(initDb)
+## var db = levelProxy(initDb)
 
 Create a new proxied database handle `db`, including events. All the leveldown
 methods are available on the `db` instance and all method calls will be queued

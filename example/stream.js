@@ -1,5 +1,5 @@
 var level = require('level');
-var levelSwap = require('../');
+var levelProxy = require('../');
 
 var a = level('/tmp/level-swap/a');
 var b = level('/tmp/level-swap/b');
@@ -16,7 +16,7 @@ b.batch([
     { type: 'put', key: 'z', value: 9 },
 ]);
 
-var db = levelSwap(a);
+var db = levelProxy(a);
 
 setInterval(function () {
     var s = db.createReadStream();

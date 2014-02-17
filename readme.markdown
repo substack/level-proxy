@@ -139,6 +139,7 @@ All of these methods behave the same as with an ordinary level db handle.
 # todo
 
 * more hooks for swappable writes/reads separately
+* proxy for iterators - not entirely sure what these do
 
 # install
 

@@ -1,5 +1,6 @@
 var inherits = require('inherits');
 var EventEmitter = require('events').EventEmitter;
+var Readable = require('readable-stream').Readable;
 
 var EVENT_KEYS = [ 'put', 'del' ];
 
@@ -24,7 +25,10 @@ LevelProxy.prototype.swap = function swap (db) {
         var queue = this._proxyQueue.splice(0);
         for (var i = 0; i < queue.length; i++) {
             var q = queue[i];
-            q.method.apply(db, q.args);
+            if (typeof q.method === 'function') {
+                q.method.apply(db, q.args);
+            }
+            else db[q.method].apply(db, q.args);
         }
         if (this._proxyQueue.length) {
             // in case more methods slipped into the queue on the same tick:
@@ -32,6 +36,7 @@ LevelProxy.prototype.swap = function swap (db) {
         }
     }
     this._proxyDb = db;
+    this.emit('swap', db);
 };
 
 LevelProxy.prototype._proxyListen = function (db) {
@@ -60,6 +65,46 @@ LevelProxy.prototype._proxyMethod = function (fname, args) {
     else this._proxyQueue.push({ method: fname, args: args })
 };
 
+LevelProxy.prototype.createKeyStream = function (opts) {
+    console.log('todo...');
+};
+
+LevelProxy.prototype.createReadStream = function () {
+    if (this._proxyDb) {
+        return this._proxyDb.createReadStream.apply(
+            this._proxyDb, arguments
+        );
+    }
+    
+    var readable = new Readable;
+    readable._options = opts;
+    var queue = [];
+    readable._read = function (n) { queue.push(n) };
+    
+    this._proxyQueue.push({
+        method: function (args) {
+            var db = this;
+            var s = db.createReadStream.apply(db, args);
+            s.on('end', function () { readable.push(null) });
+            
+            readable._read = function (n) {
+                var buf;
+                while ((buf = s.read(n)) !== null) {
+                    readable.push(buf);
+                }
+            };
+            
+            for (var i = 0; i < queue.length; i++) {
+                readable.read(queue[i]);
+            }
+            queue = null;
+        },
+        args: arguments
+    });
+    
+    return readable;
+};
+
 LevelProxy.prototype.open = function () {
     this._proxyMethod('open', arguments);
 };
@@ -74,10 +119,6 @@ LevelProxy.prototype.put = function () {
 
 LevelProxy.prototype.get = function () {
     this._proxyMethod('get', arguments);
-};
-
-LevelProxy.prototype.createReadStream = function () {
-    this._proxyMethod('createReadStream', arguments);
 };
 
 LevelProxy.prototype.del = function () {

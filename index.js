@@ -65,44 +65,54 @@ LevelProxy.prototype._proxyMethod = function (fname, args) {
     else this._proxyQueue.push({ method: fname, args: args })
 };
 
-LevelProxy.prototype.createKeyStream = function (opts) {
-    console.log('todo...');
-};
-
-LevelProxy.prototype.createReadStream = function () {
-    if (this._proxyDb) {
-        return this._proxyDb.createReadStream.apply(
-            this._proxyDb, arguments
-        );
-    }
+LevelProxy.prototype._proxyStream = function (fname, args) {
+    if (this._proxyDb) return this._proxyDb[fname].apply(this._proxyDb, args)
     
-    var readable = new Readable;
-    readable._options = opts;
+    var readable = new Readable({ objectMode: true });
+    readable._options = args[0];
     var queue = [];
     readable._read = function (n) { queue.push(n) };
     
     this._proxyQueue.push({
         method: function (args) {
             var db = this;
-            var s = db.createReadStream.apply(db, args);
+            var s = db[fname].apply(db, args);
             s.on('end', function () { readable.push(null) });
             
-            readable._read = function (n) {
-                var buf;
-                while ((buf = s.read(n)) !== null) {
-                    readable.push(buf);
-                }
+            readable._read = function f (n) {
+                if (onread(n) === 0) s.on('readable', onread);
             };
             
             for (var i = 0; i < queue.length; i++) {
-                readable.read(queue[i]);
+                var n = queue[i];
+                if (onread(n) === 0) s.on('readable', onread);
             }
             queue = null;
+            
+            function onread () {
+                var buf, times = 0;
+                while ((buf = s.read(n)) !== null) {
+                    readable.push(buf);
+                    times ++;
+                }
+                return times;
+            }
         },
-        args: arguments
+        args: args
     });
-    
     return readable;
+};
+
+LevelProxy.prototype.createReadStream = function () {
+    return this._proxyStream('createReadStream', arguments);
+};
+
+LevelProxy.prototype.createKeyStream = function () {
+    return this._proxyStream('createKeyStream', arguments);
+};
+
+LevelProxy.prototype.createValueStream = function () {
+    return this._proxyStream('createValueStream', arguments);
 };
 
 LevelProxy.prototype.open = function () {

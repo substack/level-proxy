@@ -16,12 +16,13 @@ b.batch([
     { type: 'put', key: 'z', value: 9 },
 ]);
 
-var db = levelProxy(a);
+var db = levelProxy();
 
 setInterval(function () {
-    var s = db.createReadStream();
-    s.on('data', function (r) { process.stdout.write(r.key + ' ') });
-    s.on('end', function () { process.stdout.write('\n') })
+    var s = db.createKeyStream();
+    var keys = [];
+    s.on('data', function (key) { keys.push(key) })
+    s.on('end', function () { console.log(keys) });
 }, 1000);
 
 var index = 0;

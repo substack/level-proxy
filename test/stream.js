@@ -9,17 +9,22 @@ var through2 = require('through2');
 var a = level(tmpdir + '/level-swap-a-' + Math.random(), { encoding: 'json' });
 var b = level(tmpdir + '/level-swap-b-' + Math.random(), { encoding: 'json' });
 
-a.batch([
-    { type: 'put', key: 'a', value: 3 },
-    { type: 'put', key: 'b', value: 4 },
-    { type: 'put', key: 'c', value: 5 },
-]);
+test('setup', function (t) {
+    var pending = 2;
+    a.batch([
+        { type: 'put', key: 'a', value: 3 },
+        { type: 'put', key: 'b', value: 4 },
+        { type: 'put', key: 'c', value: 5 },
+    ], done);
 
-b.batch([
-    { type: 'put', key: 'x', value: 7 },
-    { type: 'put', key: 'y', value: 8 },
-    { type: 'put', key: 'z', value: 9 },
-]);
+    b.batch([
+        { type: 'put', key: 'x', value: 7 },
+        { type: 'put', key: 'y', value: 8 },
+        { type: 'put', key: 'z', value: 9 },
+    ], done);
+    
+    function done () { if (--pending === 0) t.end() }
+});
 
 test('stream swapping', function (t) {
     t.plan(12 * 6);

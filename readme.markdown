@@ -135,3 +135,19 @@ This event triggers a `'swap'` event with the `newDb` reference.
 ## db.get(), db.put(), db.batch(), db.createReadStream(), ...
 
 All of these methods behave the same as with an ordinary level db handle.
+
+# todo
+
+* more hooks for swappable writes/reads separately
+
+# install
+
+With [npm](https://npmjs.org) do:
+
+```
+npm install level-proxy
+```
+
+# license
+
+MIT

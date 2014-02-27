@@ -74,9 +74,8 @@ LevelProxy.prototype._proxyStream = function (fname, args) {
     readable._read = function (n) { queue.push(n) };
     
     this._proxyQueue.push({
-        method: function (args) {
-            var db = this;
-            var s = db[fname].apply(db, args);
+        method: function () {
+            var s = this[fname].apply(this, arguments);
             if (!s || typeof s !== 'object' || typeof s.pipe !== 'function') {
                 var err = new Error('stream method is not a stream');
                 return readable.emit('error', err);

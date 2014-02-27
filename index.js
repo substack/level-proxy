@@ -66,7 +66,7 @@ LevelProxy.prototype._proxyMethod = function (fname, args) {
 };
 
 LevelProxy.prototype._proxyStream = function (fname, args) {
-    if (this._proxyDb) return this._proxyDb[fname].apply(this._proxyDb, args)
+    if (this._proxyDb) return this._proxyDb[fname].apply(this._proxyDb, args);
     
     var readable = new Readable({ objectMode: true });
     readable._options = args[0];
@@ -77,6 +77,11 @@ LevelProxy.prototype._proxyStream = function (fname, args) {
         method: function (args) {
             var db = this;
             var s = db[fname].apply(db, args);
+            if (!s || typeof s !== 'object' || typeof s.pipe !== 'function') {
+                var err = new Error('stream method is not a stream');
+                return readable.emit('error', err);
+            }
+            if (!s.read) s = (new Readable).wrap(s);
             s.on('end', function () { readable.push(null) });
             
             readable._read = function f (n) {

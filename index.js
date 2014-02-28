@@ -1,6 +1,6 @@
 var inherits = require('inherits');
 var EventEmitter = require('events/');
-var Readable = require('readable-stream').Readable;
+var PassThrough = require('readable-stream').PassThrough;
 
 var EVENT_KEYS = [ 'put', 'del' ];
 
@@ -68,43 +68,22 @@ LevelProxy.prototype._proxyMethod = function (fname, args) {
 LevelProxy.prototype._proxyStream = function (fname, args) {
     if (this._proxyDb) return this._proxyDb[fname].apply(this._proxyDb, args);
     
-    var readable = new Readable({ objectMode: true });
-    readable._options = args[0];
-    var queue = [];
-    readable._read = function (n) { queue.push(n) };
+    var outer = new PassThrough({ objectMode: true });
+    outer._options = args[0];
     
     this._proxyQueue.push({
         method: function () {
-            var s = this[fname].apply(this, arguments);
+            var db = this;
+            var s = db[fname].apply(db, arguments);
             if (!s || typeof s !== 'object' || typeof s.pipe !== 'function') {
                 var err = new Error('stream method is not a stream');
-                return readable.emit('error', err);
+                return outer.emit('error', err);
             }
-            if (!s.read) s = (new Readable).wrap(s);
-            s.on('end', function () { readable.push(null) });
-            
-            readable._read = function f (n) {
-                if (onread(n) === 0) s.on('readable', onread);
-            };
-            
-            for (var i = 0; i < queue.length; i++) {
-                var n = queue[i];
-                if (onread(n) === 0) s.on('readable', onread);
-            }
-            queue = null;
-            
-            function onread () {
-                var buf, times = 0;
-                while ((buf = s.read(n)) !== null) {
-                    readable.push(buf);
-                    times ++;
-                }
-                return times;
-            }
+            s.pipe(outer);
         },
         args: args
     });
-    return readable;
+    return outer;
 };
 
 LevelProxy.prototype.createReadStream = function () {

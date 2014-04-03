@@ -61,6 +61,41 @@ LevelProxy.prototype._proxyUnlisten = function (db) {
 };
 
 LevelProxy.prototype._proxyMethod = function (fname, args) {
+    var opts = {
+        get: args[1], // key, opts
+        put: args[2], // key, value, opts
+        del: args[1], // key, opts
+    }[fname] || args[1];
+    if (typeof opts !== 'object') opts = null;
+    
+    var cb = args[args.length-1];
+    if (typeof cb !== 'function') cb = null;
+    
+    var keyEncoding, valueEncoding, encoding;
+    if (opts) {
+        if (opts.keyEncoding && typeof opts.keyEncoding !== 'string') {
+            keyEncoding = opts.keyEncoding;
+            delete opts.keyEncoding;
+        }
+        if (opts.valueEncoding && typeof opts.valueEncoding !== 'string') {
+            valueEncoding = opts.valueEncoding;
+            delete opts.valueEncoding;
+        }
+        if (opts.encoding && typeof opts.encoding !== 'string') {
+            encoding = opts.encoding;
+            delete opts.encoding;
+        }
+    }
+    var customEncoding = keyEncoding || valueEncoding || encoding;
+    if (keyEncoding) {
+        args[0] = keyEncoding.encode(args[0]);
+    }
+    if (fname === 'get' && valueEncoding && cb) {
+        args[args.length - 1] = function (err, value) {
+            if (err) cb(err)
+            else cb(null, valueEncoding.decode(value));
+        };
+    }
     if (this._proxyDb) this._proxyDb[fname].apply(this._proxyDb, args)
     else this._proxyQueue.push({ method: fname, args: args })
 };

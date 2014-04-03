@@ -4,15 +4,16 @@
   "description": "proxy a leveldb reference to swap instances transparently",
   "main": "index.js",
   "dependencies": {
-    "inherits": "~2.0.1",
     "events": "~1.0.0",
-    "readable-stream": "~1.1.10"
+    "inherits": "~2.0.1",
+    "readable-stream": "~1.1.10",
+    "shallow-copy": "~0.0.1",
+    "through2": "~0.4.1"
   },
   "devDependencies": {
-    "tape": "~2.3.2",
+    "tape": "~2.12.2",
     "level": "~0.18.0",
-    "through": "~2.3.4",
-    "through2": "~0.4.1"
+    "through": "~2.3.4"
   },
   "scripts": {
     "test": "tape test/*.js"

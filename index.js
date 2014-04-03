@@ -1,6 +1,8 @@
 var inherits = require('inherits');
 var EventEmitter = require('events/');
 var PassThrough = require('readable-stream').PassThrough;
+var through = require('through2');
+var copy = require('shallow-copy');
 
 var EVENT_KEYS = [ 'put', 'del' ];
 
@@ -73,6 +75,9 @@ LevelProxy.prototype._proxyMethod = function (fname, args) {
     
     var keyEncoding, valueEncoding, encoding;
     if (opts) {
+        opts = copy(opts);
+        args[{ put: 2 }[fname] || 1] = opts;
+        
         if (opts.keyEncoding && typeof opts.keyEncoding !== 'string') {
             keyEncoding = opts.keyEncoding;
             delete opts.keyEncoding;
@@ -101,6 +106,45 @@ LevelProxy.prototype._proxyMethod = function (fname, args) {
 };
 
 LevelProxy.prototype._proxyStream = function (fname, args) {
+    var opts = args[0] && typeof args[0] === 'object' ? args[0] : null;
+    
+    var keyEncoding, valueEncoding, encoding;
+    if (opts) {
+        opts = copy(opts);
+        args[0] = opts;
+        
+        if (opts.keyEncoding && typeof opts.keyEncoding !== 'string') {
+            keyEncoding = opts.keyEncoding;
+            opts.keyEncoding = 'binary';
+        }
+        if (opts.valueEncoding && typeof opts.valueEncoding !== 'string') {
+            valueEncoding = opts.valueEncoding;
+            opts.valueEncoding = 'binary';
+        }
+        if (opts.encoding && typeof opts.encoding !== 'string') {
+            encoding = opts.encoding;
+            opts.encoding = 'binary';
+        }
+    }
+    var customEncoding = keyEncoding || valueEncoding || encoding;
+    if (keyEncoding && opts.start) opts.start = keyEncoding.encode(opts.start);
+    if (keyEncoding && opts.end) opts.end = keyEncoding.encode(opts.end);
+    if (keyEncoding && opts.lt) opts.lt = keyEncoding.encode(opts.lt);
+    if (keyEncoding && opts.lte) opts.lte = keyEncoding.encode(opts.lte);
+    if (keyEncoding && opts.gt) opts.gt = keyEncoding.encode(opts.gt);
+    if (keyEncoding && opts.gte) opts.gte = keyEncoding.encode(opts.gte);
+    
+    if (customEncoding) {
+        return this._proxyStream(fname, [opts].concat([].slice.call(args, 1)))
+            .pipe(through({ objectMode: true }, function (row, enc, next) {
+                if (keyEncoding) row.key = keyEncoding.decode(row.key);
+                if (valueEncoding) row.value = valueEncoding.decode(row.value);
+                this.push(row);
+                next();
+            }))
+        ;
+    }
+    
     if (this._proxyDb) return this._proxyDb[fname].apply(this._proxyDb, args);
     
     var outer = new PassThrough({ objectMode: true });

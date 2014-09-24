@@ -92,7 +92,16 @@ LevelProxy.prototype._proxyMethod = function (fname, args) {
         }
     }
     var customEncoding = keyEncoding || valueEncoding || encoding;
-    if (keyEncoding) {
+    if (customEncoding && fname === 'batch') {
+        args[0] = args[0].map(function (x) {
+            var row = copy(x);
+            if (keyEncoding) row.key = keyEncoding.encode(x.key)
+            if (valueEncoding) row.key = encoding.encode(x.value)
+            else if (encoding) row.value = encoding.encode(x.value)
+            return row;
+        });
+    }
+    else if (keyEncoding) {
         args[0] = keyEncoding.encode(args[0]);
     }
     if (fname === 'get' && valueEncoding && cb) {

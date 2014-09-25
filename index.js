@@ -14,6 +14,7 @@ function LevelProxy (db) {
     this._proxyQueue = [];
     this._proxyListeners = {};
     this._proxyIterators = [];
+    this.db = this;
     if (db) this.swap(db);
 }
 
@@ -36,10 +37,8 @@ LevelProxy.prototype.swap = function swap (db) {
         var its = this._proxyIterators.splice(0);
         for (var i = 0; i < its.length; i++) {
             var it = its[i];
-            var realIt = (
-                (db.iterator && db.iterator())
-                || (db.db && db.db.iterator && db.db.iterator())
-            );
+            var itf = db.iterator || (db.db && db.db.iterator);
+            var realIt = itf.call(db.db || db, it._proxyOptions);
             it._proxyI = realIt;
             var pn = it._proxyNext.splice(0);
             for (var j = 0; j < pn.length; j++) {
@@ -249,7 +248,7 @@ LevelProxy.prototype.isOpen = function () {
     return true;
 };
 
-LevelProxy.prototype.iterator = function () {
+LevelProxy.prototype.iterator = function (opts) {
     var db = this._proxyDb;
     if (db && db.iterator) {
         return db.iterator.apply(db, arguments);
@@ -258,22 +257,23 @@ LevelProxy.prototype.iterator = function () {
         return db.db.iterator.apply(db.db, arguments);
     }
     
-    var i = new IteratorProxy(this.db);
+    var i = new IteratorProxy(opts);
     this._proxyIterators.push(i);
     return i;
 };
 
-function IteratorProxy () {
+function IteratorProxy (opts) {
+    this._proxyOptions = opts;
     this._proxyNext = [];
     this._proxyEnd = [];
 }
 
 IteratorProxy.prototype.next = function (cb) {
-    if (this._proxyI) return this.proxyI.next(cb);
+    if (this._proxyI) return this._proxyI.next(cb);
     this._proxyNext.push(cb);
 };
 
 IteratorProxy.prototype.end = function (cb) {
-    if (this._proxyI) return this.proxyI.end(cb);
+    if (this._proxyI) return this._proxyI.end(cb);
     this._proxyEnd.push(cb);
 };

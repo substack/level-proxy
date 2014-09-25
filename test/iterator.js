@@ -47,3 +47,19 @@ test('waiting iterator', function (t) {
         pa.swap(a);
     }, 20);
 });
+
+test('resolved iterator', function (t) {
+    t.plan(6);
+    var pa = levelProxy();
+    pa.swap(a);
+    var ia = pa.db.iterator({ gte: 'b', lt: 'z' });
+    var expected = [ 'b', '4', 'c', '5' ];
+    ia.next(onnext);
+    
+    function onnext (err, key, value) {
+        t.ifError(err);
+        t.equal(key.toString('utf8'), expected.shift());
+        t.equal(value.toString('utf8'), expected.shift());
+        if (expected.length) ia.next(onnext);
+    }
+});

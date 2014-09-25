@@ -13,6 +13,7 @@ function LevelProxy (db) {
     if (!(this instanceof LevelProxy)) return new LevelProxy(db);
     this._proxyQueue = [];
     this._proxyListeners = {};
+    this._proxyIterators = [];
     if (db) this.swap(db);
 }
 
@@ -32,7 +33,24 @@ LevelProxy.prototype.swap = function swap (db) {
             }
             else db[q.method].apply(db, q.args);
         }
-        if (this._proxyQueue.length) {
+        var its = this._proxyIterators.splice(0);
+        for (var i = 0; i < its.length; i++) {
+            var it = its[i];
+            var realIt = (
+                (db.iterator && db.iterator())
+                || (db.db && db.db.iterator && db.db.iterator())
+            );
+            it._proxyI = realIt;
+            var pn = it._proxyNext.splice(0);
+            for (var j = 0; j < pn.length; j++) {
+                realIt.next(pn[j]);
+            }
+            var pe = it._proxyEnd.splice(0);
+            for (var j = 0; j < pe.length; j++) {
+                realIt.end(pe[j]);
+            }
+        }
+        if (this._proxyQueue.length || this._proxyIterators.length) {
             // in case more methods slipped into the queue on the same tick:
             return swap.call(this, db);
         }
@@ -46,7 +64,8 @@ LevelProxy.prototype._proxyListen = function (db) {
     this._proxyListeners = {};
     for (var i = 0; i < EVENT_KEYS.length; i++) (function (key) {
         self._proxyListeners[key] = f;
-        db.on(key, f);
+        try { db.on(key, f) }
+        catch (err) {}
         function f () {
             var args = [].slice.call(arguments);
             args.unshift(key);
@@ -186,8 +205,8 @@ LevelProxy.prototype.createValueStream = function () {
     return this._proxyStream('createValueStream', arguments);
 };
 
-LevelProxy.prototype.open = function () {
-    this._proxyMethod('open', arguments);
+LevelProxy.prototype.open = function (fn) {
+    process.nextTick(fn);
 };
 
 LevelProxy.prototype.close = function () {
@@ -226,16 +245,35 @@ LevelProxy.prototype.repair = function () {
     this._proxyMethod('repair', arguments);
 };
 
+LevelProxy.prototype.isOpen = function () {
+    return true;
+};
+
 LevelProxy.prototype.iterator = function () {
-    return new IteratorProxy(this.db);
+    var db = this._proxyDb;
+    if (db && db.iterator) {
+        return db.iterator.apply(db, arguments);
+    }
+    if (db && db.db && db.db.iterator) {
+        return db.db.iterator.apply(db.db, arguments);
+    }
+    
+    var i = new IteratorProxy(this.db);
+    this._proxyIterators.push(i);
+    return i;
 };
 
 function IteratorProxy () {
-    // TODO
+    this._proxyNext = [];
+    this._proxyEnd = [];
 }
 
-IteratorProxy.prototype.next = function () {
+IteratorProxy.prototype.next = function (cb) {
+    if (this._proxyI) return this.proxyI.next(cb);
+    this._proxyNext.push(cb);
 };
 
-IteratorProxy.prototype.end = function () {
+IteratorProxy.prototype.end = function (cb) {
+    if (this._proxyI) return this.proxyI.end(cb);
+    this._proxyEnd.push(cb);
 };

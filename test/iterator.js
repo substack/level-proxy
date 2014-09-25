@@ -63,3 +63,39 @@ test('resolved iterator', function (t) {
         if (expected.length) ia.next(onnext);
     }
 });
+
+test('waiting iterator end', function (t) {
+    t.plan(4);
+    var pa = levelProxy();
+    var ia = pa.db.iterator({ gte: 'b', lt: 'z' });
+    ia.next(onnext);
+    
+    function onnext (err, key, value) {
+        t.ifError(err);
+        t.equal(key.toString('utf8'), 'b');
+        t.equal(value.toString('utf8'), '4');
+        ia.end(function (err) {
+            t.ifError(err);
+        });
+    }
+    setTimeout(function () {
+        pa.swap(a);
+    }, 20);
+});
+
+test('resolved iterator end', function (t) {
+    t.plan(4);
+    var pa = levelProxy();
+    pa.swap(a);
+    var ia = pa.db.iterator({ gte: 'b', lt: 'z' });
+    ia.next(onnext);
+    
+    function onnext (err, key, value) {
+        t.ifError(err);
+        t.equal(key.toString('utf8'), 'b');
+        t.equal(value.toString('utf8'), '4');
+        ia.end(function (err) {
+            t.ifError(err);
+        });
+    }
+});

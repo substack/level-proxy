@@ -3,6 +3,10 @@ var EventEmitter = require('events/');
 var PassThrough = require('readable-stream').PassThrough;
 var through = require('through2');
 var copy = require('shallow-copy');
+var jsonEncoding = {
+    encode: function (obj) { return JSON.stringify(obj) },
+    decode: function (s) { return JSON.parse(s) }
+};
 
 var EVENT_KEYS = [ 'put', 'del' ];
 
@@ -10,12 +14,56 @@ module.exports = LevelProxy;
 inherits(LevelProxy, EventEmitter);
 
 function LevelProxy (db) {
+    var self = this;
     if (!(this instanceof LevelProxy)) return new LevelProxy(db);
     this._proxyQueue = [];
     this._proxyListeners = {};
     this._proxyIterators = [];
-    this.db = this;
+    this.db = {
+        open: function (opts, cb) {
+            return self.open(down(opts), cb);
+        },
+        batch: function (rows, opts, cb) {
+            return self.batch(rows, down(opts), cb)
+        },
+        get: function (key, opts, cb) {
+            return self.get(key, down(opts), cb)
+        },
+        put: function (key, value, opts, cb) {
+            return self.put(key, value, down(opts), cb)
+        },
+        del: function (key, opts, cb) {
+            return self.del(key, down(opts), cb)
+        },
+        iterator: function (opts) {
+            return self.iterator(down(opts));
+        },
+        close: function (cb) {
+            return self.close(cb);
+        },
+        approximateSize: function (start, end, cb) {
+            return self.approximateSize(start, end, cb);
+        },
+        getProperty: function (key) {
+            return self.getProperty(key);
+        },
+        destroy: function (p, cb) {
+            return self.destroy(p, cb);
+        },
+        repair: function (p, cb) {
+            return self.repair(p, cb);
+        }
+    };
     if (db) this.swap(db);
+    
+    function down (opts) {
+        if (!opts || typeof opts !== 'object') return opts;
+        var opts_ = copy(opts);
+        delete opts_.keyEncoding;
+        delete opts_.valueEncoding;
+        delete opts_.encoding;
+        return opts_;
+    }
 }
 
 LevelProxy.prototype.swap = function swap (db) {
@@ -96,15 +144,27 @@ LevelProxy.prototype._proxyMethod = function (fname, args) {
         opts = copy(opts);
         args[{ put: 2 }[fname] || 1] = opts;
         
-        if (opts.keyEncoding && typeof opts.keyEncoding !== 'string') {
+        if (opts.keyEncoding === 'json') {
+            keyEncoding = jsonEncoding;
+            delete opts.keyEncoding;
+        }
+        else if (opts.keyEncoding && typeof opts.keyEncoding !== 'string') {
             keyEncoding = opts.keyEncoding;
             delete opts.keyEncoding;
         }
-        if (opts.valueEncoding && typeof opts.valueEncoding !== 'string') {
+        if (opts.valueEncoding === 'json') {
+            valueEncoding = jsonEncoding;
+            delete opts.valueEncoding;
+        }
+        else if (opts.valueEncoding && typeof opts.valueEncoding !== 'string') {
             valueEncoding = opts.valueEncoding;
             delete opts.valueEncoding;
         }
-        if (opts.encoding && typeof opts.encoding !== 'string') {
+        if (opts.encoding === 'json') {
+            encoding = jsonEncoding;
+            delete opts.encoding;
+        }
+        else if (opts.encoding && typeof opts.encoding !== 'string') {
             encoding = opts.encoding;
             delete opts.encoding;
         }
@@ -114,7 +174,7 @@ LevelProxy.prototype._proxyMethod = function (fname, args) {
         args[0] = args[0].map(function (x) {
             var row = copy(x);
             if (keyEncoding) row.key = keyEncoding.encode(x.key)
-            if (valueEncoding) row.key = encoding.encode(x.value)
+            if (valueEncoding) row.value = valueEncoding.encode(x.value)
             else if (encoding) row.value = encoding.encode(x.value)
             return row;
         });

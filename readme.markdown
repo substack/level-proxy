@@ -138,10 +138,9 @@ This event triggers a `'swap'` event with the `newDb` reference.
 
 All of these methods behave the same as with an ordinary level db handle.
 
-# todo
+## db.db.iterator(), ...
 
-* more hooks for swappable writes/reads separately
-* proxy for iterators - not entirely sure what these do
+leveldown methods such as `db.db.iterator()` are also proxied.
 
 # install
 

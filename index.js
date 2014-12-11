@@ -8,7 +8,7 @@ var jsonEncoding = {
     decode: function (s) { return JSON.parse(s) }
 };
 
-var EVENT_KEYS = [ 'put', 'del' ];
+var EVENT_KEYS = [ 'put', 'del', 'batch' ];
 
 module.exports = LevelProxy;
 inherits(LevelProxy, EventEmitter);
